@@ -6,7 +6,10 @@ import { discoverFiles } from "#jevlint/source-files.ts";
 import { lintFiles } from "#jevlint/lint-files.ts";
 import type { ProgressWriter } from "#jevlint/lint-files.ts";
 import { report } from "#jevlint/report.ts";
-import { loadConfiguration } from "#jevlint/configuration.ts";
+import {
+  initializeConfiguration,
+  loadConfiguration,
+} from "#jevlint/configuration.ts";
 import { loadPlugins } from "#jevlint/plugins.ts";
 
 interface CliInput {
@@ -17,6 +20,10 @@ interface CliInput {
 }
 
 const help = `Usage: jevlint [folders, files, or quoted globs] [options]
+       jevlint init [--config <path>]
+
+init creates jevlint.config.json with the magic-strings plugin, without an API key.
+Existing configurations are never overwritten. Use ./init to lint a folder named init.
 
 Recursively judge JavaScript/TypeScript files for magic strings using Jev.
 Loads jevlint.config.json from the current directory when present.
@@ -77,6 +84,25 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
   const { values, positionals } = parseOptions({ args });
 
   if (values.help) return { stdout: help, stderr: "", exitCode: 0 };
+
+  if (args[0] === "init") {
+    if (
+      positionals.length !== 1 ||
+      Object.keys(values).some((option) => option !== "config")
+    )
+      throw new Error("Usage: jevlint init [--config <path>]");
+
+    const filePath = await initializeConfiguration({
+      cwd,
+      configPath: values.config,
+    });
+
+    return {
+      stdout: `Created ${filePath} with the magic-strings plugin.\n`,
+      stderr: "",
+      exitCode: 0,
+    };
+  }
 
   const { configuration, directory } = await loadConfiguration({
     cwd,

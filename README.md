@@ -13,7 +13,7 @@ probabilities. The default threshold for a finding is `0.8`.
 Requires Node.js 22.18 or newer. Install in your project:
 
 ```sh
-npm install --save-dev @huntedman/jevlint
+npm install --save-dev @jevlint/cli
 ```
 
 Add your API key to a `.env` file in the directory where you run JevLint:
@@ -36,12 +36,18 @@ API or needing a key, use `npx jevlint src --dry-run`.
 
 ## Configuration
 
-Configuration is optional. To customize it, copy the included example:
+Configuration is optional. Run this from your repository root to create it:
 
 ```sh
-cp node_modules/@huntedman/jevlint/jevlint.config.example.json jevlint.config.json
+npx jevlint init
 npx jevlint
 ```
+
+`init` creates `jevlint.config.json` with the built-in `magic-strings` plugin and
+scans the current directory, excluding tests and TypeScript declaration files.
+It needs no API key and refuses to overwrite an existing config. Use
+`jevlint init --config path/to/config.json` to choose another file in an existing
+directory.
 
 Edit `files`, `ignore`, `plugins`, `model`, or `threshold` as needed. Configured paths
 are relative to the config file's directory. Command-line targets are relative to
@@ -51,7 +57,7 @@ automatically.
 
 Use `--config path/to/config.json` to load another configuration. Custom plugins
 can be registered by path and export a `plugin` object with `id`, `instructions`,
-and `message`; see [the built-in plugin](plugins/magic-strings/index.ts).
+and `message`; see [the built-in plugin](https://github.com/huntedman/JevLint/blob/main/plugins/magic-strings/index.ts).
 
 Run `npx jevlint --help` for all options. Exit codes are `0` for no findings,
 `1` for findings, and `2` for configuration or analysis failures.

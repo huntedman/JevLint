@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
 
@@ -43,6 +43,31 @@ const configurationSchema = z.strictObject({
   timeoutMs: z.int().positive().max(3_600_000).default(30_000),
   maxFileBytes: z.int().positive().default(131_072),
 });
+
+export async function initializeConfiguration({
+  cwd,
+  configPath,
+}: Pick<ConfigurationInput, "cwd" | "configPath">) {
+  const filePath = resolve(cwd, configPath ?? "jevlint.config.json");
+  const configuration = configurationSchema.parse({
+    ignore: ["**/*.test.*", "**/*.d.ts"],
+  });
+
+  try {
+    await writeFile(filePath, `${JSON.stringify(configuration, null, 2)}\n`, {
+      flag: "wx",
+    });
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "EEXIST")
+      throw new Error(
+        `Configuration already exists at ${filePath}; left unchanged.`,
+      );
+
+    throw error;
+  }
+
+  return filePath;
+}
 
 async function readConfiguration({
   filePath,
