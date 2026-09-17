@@ -36,6 +36,22 @@ API or needing a key, use `npx jevlint src --dry-run`.
 
 ## Configuration
 
+Text output groups findings by file, shows probability percentages, and uses
+colours in terminals. To use compact plain text, set `"prettyPrint": false` in
+`jevlint.config.json` (the default is `true`). Use `--color always` or
+`--color never` to control colours in pretty output; `NO_COLOR` disables automatic
+colours.
+
+For scripts and CI, use `--format json` or set `"format": "json"` in your config.
+JSON output never includes colours or progress messages. Reports contain
+`plugins`, `model`, `threshold`, `results`, and `summary`; file failures are included
+in `results`. Fatal errors use `{ "error": { "message": "..." } }` and exit code 2.
+`prettyPrint` has no effect on JSON.
+
+```sh
+npx jevlint --format json > report.json
+```
+
 Configuration is optional. Run this from your repository root to create it:
 
 ```sh

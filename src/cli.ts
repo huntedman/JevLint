@@ -5,7 +5,7 @@ import { z } from "zod";
 import { discoverFiles } from "#jevlint/source-files.ts";
 import { lintFiles } from "#jevlint/lint-files.ts";
 import type { ProgressWriter } from "#jevlint/lint-files.ts";
-import { report } from "#jevlint/report.ts";
+import { report, styleOutput } from "#jevlint/report.ts";
 import {
   initializeConfiguration,
   loadConfiguration,
@@ -17,6 +17,29 @@ interface CliInput {
   cwd: string;
   environment: NodeJS.ProcessEnv;
   writeProgress?: ProgressWriter;
+  stdoutIsTTY?: boolean;
+  stderrIsTTY?: boolean;
+}
+
+interface OutputSettings {
+  format: "text" | "json";
+  stdoutColor: boolean;
+  stderrColor: boolean;
+}
+
+const colorMode = { auto: "auto", always: "always", never: "never" } as const;
+
+function useColor(
+  mode: (typeof colorMode)[keyof typeof colorMode],
+  isTTY: boolean,
+  environment: NodeJS.ProcessEnv,
+) {
+  if (mode === colorMode.always) return true;
+  if (mode === colorMode.never || environment.NO_COLOR !== undefined)
+    return false;
+  if (environment.FORCE_COLOR !== undefined)
+    return environment.FORCE_COLOR !== "0";
+  return isTTY && environment.TERM !== "dumb";
 }
 
 const help = `Usage: jevlint [folders, files, or quoted globs] [options]
@@ -38,13 +61,14 @@ Existing environment variables take precedence over .env values.
   --threshold <0..1>  Flag files at or above this probability (default: 0.8)
   --model <name>      Jev model (default: jev-latest)
   --format text|json Output format (default: text)
+  --color auto|always|never  Terminal colours (default: auto; respects NO_COLOR)
   --ignore <glob>    Add exclusions relative to the config directory; repeatable
   --dry-run         Print request JSON without calling Jev or requiring an API key
   -h, --help        Show help
 
 Example: jevlint apps/backend/src --ignore '**/*.test.ts'
 CLI model, threshold, and format override configured values.
-Config keys: files, ignore, plugins, model, threshold, format, apiKeyEnv,
+Config keys: files, ignore, plugins, model, threshold, format, prettyPrint, apiKeyEnv,
 timeoutMs, maxFileBytes. Plugins accept a name/path or { path, files, ignore }.
 Use magic-strings or a directory containing index.ts/index.mjs exporting plugin
 with id, instructions (a NOUL question), and message.
@@ -74,6 +98,7 @@ function parseOptions({ args }: Pick<CliInput, "args">) {
       threshold: { type: "string" },
       model: { type: "string" },
       format: { type: "string" },
+      color: { type: "string" },
       ignore: { type: "string", multiple: true },
       "dry-run": { type: "boolean" },
       help: { type: "boolean", short: "h" },
@@ -81,8 +106,25 @@ function parseOptions({ args }: Pick<CliInput, "args">) {
   });
 }
 
-async function execute({ args, cwd, environment, writeProgress }: CliInput) {
+async function execute(
+  {
+    args,
+    cwd,
+    environment,
+    writeProgress,
+    stdoutIsTTY = false,
+    stderrIsTTY = false,
+  }: CliInput,
+  output: OutputSettings,
+) {
   const { values, positionals } = parseOptions({ args });
+
+  if (values.format === "json") output.format = "json";
+  const mode = z
+    .enum([colorMode.auto, colorMode.always, colorMode.never])
+    .parse(values.color ?? colorMode.auto);
+  output.stdoutColor = useColor(mode, stdoutIsTTY, environment);
+  output.stderrColor = useColor(mode, stderrIsTTY, environment);
 
   if (values.help) return { stdout: help, stderr: "", exitCode: 0 };
 
@@ -110,6 +152,11 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
     configPath: values.config,
     overrides: optionsSchema.parse(values),
   });
+  output.format = configuration.format;
+  if (!configuration.prettyPrint) {
+    output.stdoutColor = false;
+    output.stderrColor = false;
+  }
 
   const envFile = await readFile(resolve(cwd, ".env"), "utf8").catch(
     (error: unknown) => {
@@ -156,14 +203,24 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
     directory,
     timeoutMs: configuration.timeoutMs,
     maxFileBytes: configuration.maxFileBytes,
-    writeProgress,
+    writeProgress:
+      output.format === "text" && !dryRun && stderrIsTTY && writeProgress
+        ? ({ text }) =>
+            writeProgress({
+              text: styleOutput(text, "muted", output.stderrColor),
+            })
+        : undefined,
   });
 
   const result = report({
     results,
     ...configuration,
     pluginIds: plugins.map((plugin) => plugin.id),
+    color: output.stdoutColor,
   });
+
+  if (result.stderr)
+    result.stderr = styleOutput(result.stderr, "error", output.stderrColor);
 
   if (dryRun)
     result.stdout = `${JSON.stringify({ requests, results }, null, 2)}\n`;
@@ -172,12 +229,37 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
 }
 
 export async function runCli(input: CliInput) {
+  const formatArguments = input.args.slice(
+    0,
+    input.args.indexOf("--") < 0 ? input.args.length : input.args.indexOf("--"),
+  );
+  const requestedFormat = formatArguments
+    .flatMap((argument, index) =>
+      argument === "--format"
+        ? [formatArguments[index + 1]]
+        : argument.startsWith("--format=")
+          ? [argument.slice("--format=".length)]
+          : [],
+    )
+    .at(-1);
+  const output: OutputSettings = {
+    format: requestedFormat === "json" ? "json" : "text",
+    stdoutColor: false,
+    stderrColor: false,
+  };
   try {
-    return await execute(input);
+    return await execute(input, output);
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (output.format === "json")
+      return {
+        stdout: `${JSON.stringify({ error: { message } }, null, 2)}\n`,
+        stderr: "",
+        exitCode: 2,
+      };
     return {
       stdout: "",
-      stderr: `jevlint: ${error instanceof Error ? error.message : String(error)}\n`,
+      stderr: `${styleOutput(`jevlint: ${message}`, "error", output.stderrColor)}\n`,
       exitCode: 2,
     };
   }

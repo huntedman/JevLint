@@ -115,9 +115,9 @@ it("reports file-level warnings at the threshold without inventing locations", a
   });
 
   expect(result.exitCode).toBe(1);
-  expect(result.stdout).toContain("example.ts: warning [magic-strings]");
-  expect(result.stdout).toContain("probability 0.700");
-  expect(result.stdout).toContain("1 files, 1 flagged, 0 failed");
+  expect(result.stdout).toContain("example.ts\n  warning [magic-strings]");
+  expect(result.stdout).toContain("Probability: 70.0%");
+  expect(result.stdout).toContain("1 file | 1 flagged | 0 failed");
 });
 
 it("continues after an API failure and returns the failure exit code", async () => {
@@ -143,7 +143,10 @@ it("continues after an API failure and returns the failure exit code", async () 
     skipped: 0,
   });
 
-  expect(result.stderr).toContain("a.ts: Jev API returned HTTP 529");
+  expect(JSON.parse(result.stdout).results[0].error).toContain(
+    "Jev API returned HTTP 529",
+  );
+  expect(result.stderr).toBe("");
   expect(result.stderr).not.toContain(apiKey);
 });
 

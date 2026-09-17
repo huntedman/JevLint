@@ -11,6 +11,7 @@ coverage/
 *.tgz
 .DS_Store
 /publish-local.sh
+/jevlint.config.json
 /.agents/*
 !/.agents/skills/
 /.agents/skills/*

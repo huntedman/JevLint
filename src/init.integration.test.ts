@@ -23,6 +23,7 @@ it("initializes without credentials and creates a usable magic-strings configura
     await readFile(join(cwd, "jevlint.config.json"), "utf8"),
   );
   expect(config.plugins).toEqual(["magic-strings"]);
+  expect(config.prettyPrint).toBe(true);
 
   const preview = await runCli({ cwd, args: ["--dry-run"], environment: {} });
   expect(preview.exitCode).toBe(0);

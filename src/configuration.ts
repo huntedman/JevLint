@@ -39,6 +39,7 @@ const configurationSchema = z.strictObject({
   model: z.string().trim().min(1).default("jev-latest"),
   threshold: z.number().min(0).max(1).default(0.8),
   format: z.enum(["text", "json"]).default("text"),
+  prettyPrint: z.boolean().default(true),
   apiKeyEnv: z.string().trim().min(1).default("JEV_API_KEY"),
   timeoutMs: z.int().positive().max(3_600_000).default(30_000),
   maxFileBytes: z.int().positive().default(131_072),

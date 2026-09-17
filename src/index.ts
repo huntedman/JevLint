@@ -6,6 +6,8 @@ const result = await runCli({
   args: process.argv.slice(2),
   cwd: process.cwd(),
   environment: process.env,
+  stdoutIsTTY: process.stdout.isTTY === true,
+  stderrIsTTY: process.stderr.isTTY === true,
   writeProgress: ({ text }) => {
     process.stderr.write(text);
   },
