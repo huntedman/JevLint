@@ -10,3 +10,9 @@ coverage/
 *.log
 *.tgz
 .DS_Store
+/publish-local.sh
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/typesafe-ai/
+AGENTS.md

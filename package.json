@@ -1,25 +1,30 @@
 {
-  "name": "jevlint",
-  "version": "0.0.0",
+  "name": "@huntedman/jevlint",
+  "version": "0.1.0",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "description": "Configurable semantic linting with Jev, including a magic-strings plugin.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/huntedman/JevLint.git"
   },
-  "homepage": "https://github.com/huntedman/JevLint",
+  "homepage": "https://jevlint.com",
   "bugs": {
     "url": "https://github.com/huntedman/JevLint/issues"
   },
   "packageManager": "pnpm@11.21.0",
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=22.18.0"
   },
   "scripts": {
-    "build": "esbuild src/index.ts plugins/magic-strings/index.ts --bundle --platform=node --format=esm --target=node24 --external:zod --outdir=dist --out-extension:.js=.mjs",
+    "build": "esbuild src/index.ts plugins/magic-strings/index.ts --bundle --platform=node --format=esm --target=node22.18 --external:zod --outdir=dist --out-extension:.js=.mjs",
     "prepare": "npm run build",
     "start": "pnpm jevlint",
-    "jevlint": "node --env-file-if-exists=.env src/index.ts",
+    "jevlint": "node src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "format:check": "prettier --check ."

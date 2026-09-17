@@ -1,10 +1,17 @@
 {
-  "files": ["src"],
-  "ignore": ["**/*.test.*", "**/*.d.ts"],
+  "files": [
+    "src"
+  ],
+  "ignore": [
+    "**/*.test.*",
+    "**/*.d.ts"
+  ],
   "plugins": [
     {
       "path": "magic-strings",
-      "files": ["**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
+      "files": [
+        "examples/magic-strings.ts"
+      ],
       "ignore": []
     }
   ],

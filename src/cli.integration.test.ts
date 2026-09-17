@@ -1,4 +1,4 @@
-import { symlink } from "node:fs/promises";
+import { mkdir, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -203,6 +203,74 @@ it("rejects missing credentials and invalid thresholds before making requests", 
   expect(missingKey.exitCode).toBe(2);
   expect(missingKey.stderr).toContain("JEV_API_KEY");
   expect(invalidThreshold.exitCode).toBe(2);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it.each(["JEV_API_KEY", "CUSTOM_JEV_KEY"])(
+  "loads %s from the working directory's .env with a separate config directory",
+  async (apiKeyEnv) => {
+    const cwd = await temporaryProject({
+      files: {
+        ".env": `# Local credentials\n${apiKeyEnv}="${apiKey}"\n`,
+        "config/.env": `${apiKeyEnv}=wrong-directory-key`,
+        "config/jevlint.json": JSON.stringify({ files: ["../src"], apiKeyEnv }),
+        "src/a.ts": source,
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(answer({ probability: 0.1 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await runCli({
+      cwd,
+      environment: {},
+      args: ["--config", "config/jevlint.json"],
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(
+      `Bearer ${apiKey}`,
+    );
+  },
+);
+
+it.each([apiKey, ""])(
+  "preserves an existing environment value over .env: %j",
+  async (existingKey) => {
+    const cwd = await temporaryProject({
+      files: { ".env": "JEV_API_KEY=file-key", "a.ts": source },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(answer({ probability: 0.1 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await runCli({
+      cwd,
+      environment: { JEV_API_KEY: existingKey },
+      args: [],
+    });
+
+    if (existingKey) {
+      expect(result.exitCode).toBe(0);
+      expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(
+        `Bearer ${existingKey}`,
+      );
+    } else {
+      expect(result.exitCode).toBe(2);
+      expect(result.stderr).toContain("Set JEV_API_KEY");
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  },
+);
+
+it("reports an unreadable .env as a failure before making requests", async () => {
+  const cwd = await temporaryProject({ files: { "a.ts": source } });
+  await mkdir(join(cwd, ".env"));
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+
+  const result = await runCli({ cwd, environment, args: [] });
+
+  expect(result.exitCode).toBe(2);
+  expect(result.stderr).toContain("EISDIR");
   expect(fetchMock).not.toHaveBeenCalled();
 });
 

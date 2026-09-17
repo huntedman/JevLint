@@ -1,4 +1,5 @@
-import { parseArgs } from "node:util";
+import { parseArgs, parseEnv } from "node:util";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { z } from "zod";
 import { discoverFiles } from "#jevlint/source-files.ts";
@@ -15,14 +16,15 @@ interface CliInput {
   writeProgress?: ProgressWriter;
 }
 
-const help = `Usage: pnpm jevlint [folders, files, or quoted globs] [options]
+const help = `Usage: jevlint [folders, files, or quoted globs] [options]
 
 Recursively judge JavaScript/TypeScript files for magic strings using Jev.
 Loads jevlint.config.json from the current directory when present.
 Configured paths and plugin scopes are relative to the config file's directory.
 CLI targets are relative to the working directory and replace configured files.
 Generated/dependency folders and credentials are excluded.
-Reads JEV_API_KEY by default (the root pnpm command also loads .env).
+Reads JEV_API_KEY by default and loads .env from the working directory.
+Existing environment variables take precedence over .env values.
 
   --config <path>    Read a specific configuration file
   --threshold <0..1>  Flag files at or above this probability (default: 0.8)
@@ -32,7 +34,7 @@ Reads JEV_API_KEY by default (the root pnpm command also loads .env).
   --dry-run         Print request JSON without calling Jev or requiring an API key
   -h, --help        Show help
 
-Example: pnpm jevlint apps/backend/src --ignore '**/*.test.ts'
+Example: jevlint apps/backend/src --ignore '**/*.test.ts'
 CLI model, threshold, and format override configured values.
 Config keys: files, ignore, plugins, model, threshold, format, apiKeyEnv,
 timeoutMs, maxFileBytes. Plugins accept a name/path or { path, files, ignore }.
@@ -82,7 +84,20 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
     overrides: optionsSchema.parse(values),
   });
 
-  const apiKey = (environment[configuration.apiKeyEnv] ?? "").trim();
+  const envFile = await readFile(resolve(cwd, ".env"), "utf8").catch(
+    (error: unknown) => {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT")
+        return "";
+
+      throw error;
+    },
+  );
+  const fileEnvironment = parseEnv(envFile);
+  const apiKey = (
+    environment[configuration.apiKeyEnv] ??
+    fileEnvironment[configuration.apiKeyEnv] ??
+    ""
+  ).trim();
   const dryRun = values["dry-run"] === true;
 
   if (!dryRun && !apiKey)
