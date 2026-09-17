@@ -1,0 +1,17 @@
+{
+  "files": ["src"],
+  "ignore": ["**/*.test.*", "**/*.d.ts"],
+  "plugins": [
+    {
+      "path": "magic-strings",
+      "files": ["**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
+      "ignore": []
+    }
+  ],
+  "model": "jev-latest",
+  "threshold": 0.8,
+  "format": "text",
+  "apiKeyEnv": "JEV_API_KEY",
+  "timeoutMs": 30000,
+  "maxFileBytes": 131072
+}

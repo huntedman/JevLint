@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+.turbo/
+.jevlint/
+.env
+.env.*
+*.tsbuildinfo
+*.log
+*.tgz
+.DS_Store
