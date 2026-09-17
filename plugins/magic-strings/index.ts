@@ -11,8 +11,7 @@ export const plugin = {
       "Do not flag SQL statements, fragments, database identifiers, or database-defined configuration syntax and values, including SQLite PRAGMA expressions. Choosing a database setting does not make its SQL syntax an application-defined symbolic string.",
       "Never flag primitive booleans or their serialized 'true' / 'false' values, including environment variables and DOM dataset attributes. An application-specific property name does not turn a boolean into a symbolic string.",
       "Library-owned values remain exempt when application code compares them, such as Kysely migration.status === 'Success'. Apply these exceptions before deciding whether a string represents a finite choice.",
-      "Allow package-resolution condition names in compiler and resolver configuration, such as customConditions: ['development']. They do not need application constants, even when the project chooses the names.",
-      "Answer yes only for violations requiring a change in this file. Exempt or compliant code must receive no finding. Do not invent unseen constants or require changes to dependencies. Exemptions do not cover unrelated application states merely because they use the same string.",
+      "Answer yes only for violations requiring a change in this file.",
     ],
     examples: {
       violation:
@@ -22,5 +21,5 @@ export const plugin = {
     },
   },
   message:
-    "Possible magic strings: replace application-defined symbolic literals with named members of a descriptive constant object.",
+    "Magic strings: replace application-defined symbolic literals with named members of a descriptive constant object.",
 } as const;

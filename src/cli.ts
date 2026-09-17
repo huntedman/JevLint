@@ -30,6 +30,7 @@ Loads jevlint.config.json from the current directory when present.
 Configured paths and plugin scopes are relative to the config file's directory.
 CLI targets are relative to the working directory and replace configured files.
 Generated/dependency folders and credentials are excluded.
+Files outside the working directory, including external symlink targets, are excluded.
 Reads JEV_API_KEY by default and loads .env from the working directory.
 Existing environment variables take precedence over .env values.
 
@@ -138,6 +139,7 @@ async function execute({ args, cwd, environment, writeProgress }: CliInput) {
 
   const files = await discoverFiles({
     cwd: directory,
+    projectRoot: cwd,
     targets: positionals.length
       ? positionals.map((target) => resolve(cwd, target))
       : configuration.files,

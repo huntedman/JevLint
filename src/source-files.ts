@@ -1,9 +1,10 @@
-import { glob, lstat, open } from "node:fs/promises";
-import { resolve } from "node:path";
+import { glob, lstat, open, realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { matchesFilePattern } from "#jevlint/file-pattern.ts";
 
 interface DiscoverFilesInput {
   cwd: string;
+  projectRoot: string;
   targets: readonly string[];
   ignore: readonly string[];
 }
@@ -34,6 +35,10 @@ interface DiscoverPatternInput {
 
 const ignoredDirectories = [
   "node_modules",
+  "bower_components",
+  "vendor",
+  ".yarn",
+  ".pnpm",
   "dist",
   "release",
   ".git",
@@ -56,16 +61,24 @@ const defaultExclusions = [
 
 export async function discoverFiles({
   cwd,
+  projectRoot,
   targets,
   ignore,
 }: DiscoverFilesInput) {
   const files = new Set<string>();
 
   const exclude = [...defaultExclusions, ...ignore];
+  const canonicalRoot = await realpath(projectRoot);
 
   for (const target of targets) {
+    if (!isProjectSourcePath(projectRoot, resolve(cwd, target))) continue;
+
     for await (const filePath of discoverTarget({ cwd, target, exclude })) {
-      files.add(filePath);
+      if (
+        isProjectSourcePath(projectRoot, filePath) &&
+        isProjectSourcePath(canonicalRoot, await realpath(filePath))
+      )
+        files.add(filePath);
     }
   }
 
@@ -73,6 +86,17 @@ export async function discoverFiles({
     throw new Error("No JavaScript or TypeScript files found.");
 
   return [...files].sort();
+}
+
+function isProjectSourcePath(projectRoot: string, filePath: string) {
+  const localPath = relative(projectRoot, filePath);
+  const segments = localPath.split(sep);
+
+  return (
+    !isAbsolute(localPath) &&
+    segments[0] !== ".." &&
+    !segments.some((segment) => ignoredDirectories.includes(segment))
+  );
 }
 
 async function* discoverTarget({ cwd, target, exclude }: DiscoverTargetInput) {

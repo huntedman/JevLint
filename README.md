@@ -55,6 +55,12 @@ the working directory and replace configured `files`; without either, JevLint sc
 the current directory. Common generated and dependency directories are excluded
 automatically.
 
+JevLint only scans files inside the directory where you run it. External paths
+and symlinks resolving outside that directory are excluded. Dependency directories
+(`node_modules`, `bower_components`, `vendor`, `.yarn`, `.pnpm`, and `.pnpm-store`)
+are excluded even when explicitly targeted. Add other external-code directories
+to your config's `ignore` list.
+
 Use `--config path/to/config.json` to load another configuration. Custom plugins
 can be registered by path and export a `plugin` object with `id`, `instructions`,
 and `message`; see [the built-in plugin](https://github.com/huntedman/JevLint/blob/main/plugins/magic-strings/index.ts).
