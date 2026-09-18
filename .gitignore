@@ -17,3 +17,4 @@ coverage/
 /.agents/skills/*
 !/.agents/skills/typesafe-ai/
 AGENTS.md
+.temp/

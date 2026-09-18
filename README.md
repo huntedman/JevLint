@@ -1,17 +1,72 @@
 # JevLint
 
-JevLint is a configurable semantic linter for JavaScript and TypeScript, powered by
-Jev. Its built-in `magic-strings` plugin checks for application-defined string
-literals, such as states, modes, and actions, that should use named constants.
-Ordinary display text, paths, and library-defined values are exempt.
+**Slop happens. Don’t ship it.**
 
-JevLint sends each selected file's source to the Jev API and reports file-level
-probabilities. The default threshold for a finding is `0.8`.
+Write coding conventions in plain English. JevLint checks what your code means, semantically, so your coding agent can fix what syntax rules miss.
 
-The optional `descriptive-names` plugin checks for vague or misleading identifiers
-whose purpose can be established from the file. It allows conventional short names,
-clear local names, and externally defined APIs. Enable both built-in plugins in
-`jevlint.config.json`:
+Use it in a **write → check → fix → repeat** workflow: your agent writes code,
+JevLint checks it against your conventions, and the agent uses the findings to
+make the next edit. Run it from your terminal, an agent’s verification step, or CI.
+Your agent or workflow controls when to run checks and how to fix findings;
+JevLint supplies the judgments.
+
+JevLint is powered by Jev, TypeSafe AI’s System One model. It sends selected source
+files and plugin instructions to the Jev API, then reports the probability that
+each file violates a rule. Findings are file-level signals for review, without
+line-level diagnostics, generated replacement names, or automatic fixes. The
+default finding threshold is `0.8` (80%).
+
+[Website](https://jevlint.com) · [npm](https://www.npmjs.com/package/@jevlint/cli) ·
+[GitHub](https://github.com/huntedman/JevLint)
+
+## Get started
+
+Requires **Node.js 22.18 or newer**. From your project root:
+
+```sh
+npm install --save-dev @jevlint/cli
+npx jevlint init
+```
+
+`init` creates `jevlint.config.json` with `magic-strings` enabled,
+`prettyPrint: true`, and exclusions for tests and TypeScript declaration files.
+It never overwrites an existing config. Configuration is optional: without one, JevLint scans the current directory with `magic-strings`.
+
+Add your key to `.env` in the directory where you run JevLint:
+
+```dotenv
+JEV_API_KEY=your-api-key
+```
+
+The CLI loads `.env` automatically; exported shell variables take precedence.
+Then run:
+
+```sh
+npx jevlint
+```
+
+To choose targets, preview requests, or adjust the threshold:
+
+```sh
+npx jevlint src
+npx jevlint 'src/**/*.ts' --ignore '**/*.test.ts'
+npx jevlint src --dry-run
+npx jevlint src --threshold 0.9 --format json
+```
+
+Quote globs so JevLint expands them. Repeat `--ignore` for additional exclusions.
+`--dry-run` prints request JSON without calling the API or requiring a key.
+
+## Your rules, your files
+
+Built-in plugins can be enabled by name:
+
+| Plugin              | What it checks                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `magic-strings`     | Application-defined symbolic strings, such as states, modes, and actions, that should use named constants. Ordinary display text, paths, and library-defined values are exempt.                  |
+| `descriptive-names` | Vague or misleading identifiers whose purpose is clear enough from the file to justify a better name. Conventional short names, clear local names, and externally defined API names are allowed. |
+
+Enable both across all selected files with:
 
 ```json
 {
@@ -19,88 +74,50 @@ clear local names, and externally defined APIs. Enable both built-in plugins in
 }
 ```
 
-`jevlint init` enables `magic-strings` by default. Naming findings are file-level
-probabilities, like the other plugin; they do not include suggested replacements
-or automatic renames.
-
-## Getting started
-
-Requires Node.js 22.18 or newer. Install in your project:
-
-```sh
-npm install --save-dev @jevlint/cli
-```
-
-Add your API key to a `.env` file in the directory where you run JevLint:
-
-```dotenv
-JEV_API_KEY=your-api-key
-```
-
-Then run:
-
-```sh
-npx jevlint src
-npx jevlint 'src/**/*.ts' --ignore '**/*.test.ts'
-npx jevlint src --threshold 0.9 --format json
-```
-
-The CLI loads `.env` automatically. You can also export `JEV_API_KEY` in your shell;
-exported variables take precedence. To preview request JSON without calling the
-API or needing a key, use `npx jevlint src --dry-run`.
-
-## Configuration
-
-Text output groups findings by file, shows probability percentages, and uses
-colours in terminals. To use compact plain text, set `"prettyPrint": false` in
-`jevlint.config.json` (the default is `true`). Use `--color always` or
-`--color never` to control colours in pretty output; `NO_COLOR` disables automatic
-colours.
-
-For scripts and CI, use `--format json` or set `"format": "json"` in your config.
-JSON output never includes colours or progress messages. Reports contain
-`plugins`, `model`, `threshold`, `results`, and `summary`; file failures are included
-in `results`. Fatal errors use `{ "error": { "message": "..." } }` and exit code 2.
-`prettyPrint` has no effect on JSON.
-
-```sh
-npx jevlint --format json > report.json
-```
-
-Configuration is optional. Run this from your repository root to create it:
-
-```sh
-npx jevlint init
-npx jevlint
-```
-
-`init` creates `jevlint.config.json` with the built-in `magic-strings` plugin and
-scans the current directory, excluding tests and TypeScript declaration files.
-It needs no API key and refuses to overwrite an existing config. Use
-`jevlint init --config path/to/config.json` to choose another file in an existing
-directory.
-
-Edit `files`, `ignore`, `plugins`, `model`, or `threshold` as needed. Configured paths
-are relative to the config file's directory. Command-line targets are relative to
-the working directory and replace configured `files`; without either, JevLint scans
-the current directory. Common generated and dependency directories are excluded
-automatically.
-
-JevLint only scans files inside the directory where you run it. External paths
-and symlinks resolving outside that directory are excluded. Dependency directories
-(`node_modules`, `bower_components`, `vendor`, `.yarn`, `.pnpm`, and `.pnpm-store`)
-are excluded even when explicitly targeted. Add other external-code directories
-to your config's `ignore` list.
-
-Use `--config path/to/config.json` to load another configuration. Custom plugins
-can be registered by path and export a `plugin` object with `id`, `instructions`,
-and `message`; see [the built-in plugin](https://github.com/huntedman/JevLint/blob/main/plugins/magic-strings/index.ts).
-
-The example config also loads `./custom-plugins/no-debug-logs`, a custom plugin
-outside the built-in plugin directory:
+Or give each plugin its own scope. This example checks separate parts of a project:
 
 ```json
 {
+  "files": ["src"],
+  "ignore": ["**/*.test.*", "**/*.d.ts"],
+  "plugins": [
+    {
+      "path": "magic-strings",
+      "files": ["src/domain/**"],
+      "ignore": ["**/*.generated.ts"]
+    },
+    {
+      "path": "descriptive-names",
+      "files": ["src/services/**"],
+      "ignore": ["**/*.generated.ts"]
+    }
+  ],
+  "threshold": 0.8,
+  "format": "text",
+  "prettyPrint": true
+}
+```
+
+## Plugins from another folder
+
+Write your convention as a yes/no question and export a `plugin` object from
+`index.mjs` or `index.ts`. For example, save this as
+`custom-plugins/no-debug-logs/index.mjs`:
+
+```js
+export const plugin = {
+  id: "no-debug-logs",
+  instructions:
+    "Does this file contain temporary debugging console calls that should be removed? Allow intentional CLI output, operational logging, and error reporting. Judge executable calls, not examples inside strings or comments.",
+  message: "Remove temporary debug logging from this file.",
+};
+```
+
+Register its directory path in your config:
+
+```json
+{
+  "files": ["src"],
   "plugins": [
     {
       "path": "./custom-plugins/no-debug-logs",
@@ -111,28 +128,54 @@ outside the built-in plugin directory:
 }
 ```
 
-The directory contains `index.mjs` exporting the plugin object. Its path is
-relative to your config file, while `files` selects the source files it checks.
-To try the included custom plugin in another project, copy it next to your config:
+The plugin path is relative to the config file. You can also point directly to a
+plugin file. Plugin IDs must be unique within a configuration. `instructions` can
+be a string or a structured object or array for more detailed rules and examples.
+
+## Human-readable and machine-readable output
+
+Pretty text is the default: findings are grouped by file, probabilities appear as
+percentages, and terminal colours distinguish warnings, errors, and clean results.
+Set `"prettyPrint": false` for compact plain text. Use `--color always` or
+`--color never` to control colours in pretty output; `NO_COLOR` disables automatic
+colours.
+
+For scripts, agents, and CI:
 
 ```sh
-cp -R node_modules/@jevlint/cli/custom-plugins ./custom-plugins
+npx jevlint --format json > report.json
 ```
 
-This example checks for temporary debug logging; it is only enabled when listed
-in `plugins`.
+You can also set `"format": "json"` in your config. JSON output includes no colours
+or progress messages, regardless of `prettyPrint`. Reports contain `plugins`,
+`model`, `threshold`, `results`, and `summary`. File failures appear in `results`;
+fatal errors use `{ "error": { "message": "..." } }`.
 
-Run `npx jevlint --help` for all options. Exit codes are `0` for no findings,
-`1` for findings, and `2` for configuration or analysis failures.
+| Exit code | Meaning                                                                |
+| --------- | ---------------------------------------------------------------------- |
+| `0`       | No findings or analysis failures. Check the summary for skipped files. |
+| `1`       | At least one file has a finding at or above the threshold.             |
+| `2`       | Configuration or analysis failure.                                     |
 
-## Running from source
+Run `npx jevlint --help` for all options. The included
+`jevlint.config.example.json` also shows model selection, a custom API-key
+environment variable, request timeout, and file-size limits.
 
-From this repository, use pnpm (the version is pinned in `package.json`):
+## Developing JevLint
+
+From this repository, use the pnpm version pinned in `package.json`:
 
 ```sh
 pnpm install
+pnpm jevlint init
 pnpm jevlint src
+pnpm test
+pnpm typecheck
+pnpm build
 ```
 
-The example configuration is at `jevlint.config.example.json` in the repository
-root. Run `pnpm test`, `pnpm typecheck`, and `pnpm build` to check and build changes.
+The source CLI also runs through `npm run jevlint -- src`. To get JSON without npm’s
+script banner, use `npm run --silent jevlint -- --format json`.
+
+JevLint is an independent project, not affiliated with or endorsed by TypeSafe AI.
+Licensed under MIT.
