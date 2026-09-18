@@ -96,6 +96,32 @@ Use `--config path/to/config.json` to load another configuration. Custom plugins
 can be registered by path and export a `plugin` object with `id`, `instructions`,
 and `message`; see [the built-in plugin](https://github.com/huntedman/JevLint/blob/main/plugins/magic-strings/index.ts).
 
+The example config also loads `./custom-plugins/no-debug-logs`, a custom plugin
+outside the built-in plugin directory:
+
+```json
+{
+  "plugins": [
+    {
+      "path": "./custom-plugins/no-debug-logs",
+      "files": ["src/**"],
+      "ignore": ["**/*.test.ts"]
+    }
+  ]
+}
+```
+
+The directory contains `index.mjs` exporting the plugin object. Its path is
+relative to your config file, while `files` selects the source files it checks.
+To try the included custom plugin in another project, copy it next to your config:
+
+```sh
+cp -R node_modules/@jevlint/cli/custom-plugins ./custom-plugins
+```
+
+This example checks for temporary debug logging; it is only enabled when listed
+in `plugins`.
+
 Run `npx jevlint --help` for all options. Exit codes are `0` for no findings,
 `1` for findings, and `2` for configuration or analysis failures.
 

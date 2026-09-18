@@ -11,6 +11,11 @@
       "path": "descriptive-names",
       "files": ["examples/**", "src/services/**"],
       "ignore": ["**/*.generated.ts"]
+    },
+    {
+      "path": "./custom-plugins/no-debug-logs",
+      "files": ["src/**"],
+      "ignore": ["**/*.test.ts"]
     }
   ],
   "model": "jev-latest",
