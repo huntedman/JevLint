@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { plugin as magicStringsPlugin } from "#jevlint-plugins/magic-strings/index.ts";
+import { plugin as descriptiveNamesPlugin } from "#jevlint-plugins/descriptive-names/index.ts";
 import type { PluginRegistration } from "#jevlint/configuration.ts";
 import { matchesFilePattern } from "#jevlint/file-pattern.ts";
 
@@ -39,7 +40,10 @@ const pluginSchema = z.object({
 });
 
 async function loadDefinition({ directory, path }: LoadDefinitionInput) {
-  if (path === magicStringsPlugin.id) return magicStringsPlugin;
+  const builtIn = [magicStringsPlugin, descriptiveNamesPlugin].find(
+    (plugin) => plugin.id === path,
+  );
+  if (builtIn) return builtIn;
 
   const pluginPath = resolve(directory, path);
   const metadata = await stat(pluginPath);

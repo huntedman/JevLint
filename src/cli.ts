@@ -48,7 +48,7 @@ const help = `Usage: jevlint [folders, files, or quoted globs] [options]
 init creates jevlint.config.json with the magic-strings plugin, without an API key.
 Existing configurations are never overwritten. Use ./init to lint a folder named init.
 
-Recursively judge JavaScript/TypeScript files for magic strings using Jev.
+Recursively judge JavaScript/TypeScript files using Jev and configured plugins.
 Loads jevlint.config.json from the current directory when present.
 Configured paths and plugin scopes are relative to the config file's directory.
 CLI targets are relative to the working directory and replace configured files.
@@ -70,7 +70,7 @@ Example: jevlint apps/backend/src --ignore '**/*.test.ts'
 CLI model, threshold, and format override configured values.
 Config keys: files, ignore, plugins, model, threshold, format, prettyPrint, apiKeyEnv,
 timeoutMs, maxFileBytes. Plugins accept a name/path or { path, files, ignore }.
-Use magic-strings or a directory containing index.ts/index.mjs exporting plugin
+Use magic-strings, descriptive-names, or a directory containing index.ts/index.mjs exporting plugin
 with id, instructions (a NOUL question), and message.
 Findings are file-level probabilities, not line-level diagnostics.
 Exit codes: 0 = no findings, 1 = findings, 2 = configuration or analysis failure.

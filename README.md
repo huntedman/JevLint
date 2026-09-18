@@ -8,6 +8,21 @@ Ordinary display text, paths, and library-defined values are exempt.
 JevLint sends each selected file's source to the Jev API and reports file-level
 probabilities. The default threshold for a finding is `0.8`.
 
+The optional `descriptive-names` plugin checks for vague or misleading identifiers
+whose purpose can be established from the file. It allows conventional short names,
+clear local names, and externally defined APIs. Enable both built-in plugins in
+`jevlint.config.json`:
+
+```json
+{
+  "plugins": ["magic-strings", "descriptive-names"]
+}
+```
+
+`jevlint init` enables `magic-strings` by default. Naming findings are file-level
+probabilities, like the other plugin; they do not include suggested replacements
+or automatic renames.
+
 ## Getting started
 
 Requires Node.js 22.18 or newer. Install in your project:

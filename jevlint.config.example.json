@@ -1,18 +1,16 @@
 {
-  "files": [
-    "src"
-  ],
-  "ignore": [
-    "**/*.test.*",
-    "**/*.d.ts"
-  ],
+  "files": ["src", "examples"],
+  "ignore": ["**/*.test.*", "**/*.d.ts"],
   "plugins": [
     {
       "path": "magic-strings",
-      "files": [
-        "examples/magic-strings.ts"
-      ],
-      "ignore": []
+      "files": ["src/**"],
+      "ignore": ["**/*.test.ts"]
+    },
+    {
+      "path": "descriptive-names",
+      "files": ["examples/**", "src/services/**"],
+      "ignore": ["**/*.generated.ts"]
     }
   ],
   "model": "jev-latest",
@@ -20,5 +18,6 @@
   "format": "text",
   "apiKeyEnv": "JEV_API_KEY",
   "timeoutMs": 30000,
-  "maxFileBytes": 131072
+  "maxFileBytes": 131072,
+  "prettyPrint": true
 }
