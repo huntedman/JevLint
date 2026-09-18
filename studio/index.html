@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jev Studio · Decision graphs</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"
+        ><span class="brand-mark">✳</span> jev<span class="brand-light"
+          >studio</span
+        ><span class="badge">RSI / LAB</span></a
+      >
+      <div class="top-right">
+        <span class="connection" id="connection">CONNECTING</span
+        ><a
+          href="https://docs.typesafe.ai/primitives/choice"
+          target="_blank"
+          rel="noreferrer"
+          >Jev docs ↗</a
+        >
+      </div>
+    </header>
+    <main class="workspace">
+      <aside class="library">
+        <div class="section-label">WORKSPACE <span>01</span></div>
+        <div class="project-card">
+          <span class="project-icon">⌘</span>
+          <div>Decision graphs<small>Local workspace</small></div>
+          <span class="live-dot"></span>
+        </div>
+        <div class="section-label">YOUR GRAPH</div>
+        <button id="new-graph" class="quiet-button">＋ New graph</button>
+        <button id="example" class="library-file">
+          ▧ <span>Code inspector<small>Example workflow</small></span></button
+        ><button id="import" class="quiet-button">↥ Import .jev.json</button
+        ><button id="export" class="quiet-button">↧ Export graph</button
+        ><input id="import-file" type="file" accept=".json,.jev.json" hidden />
+        <div class="library-divider"></div>
+        <div class="section-label">ADD A NODE <span>+</span></div>
+        <div class="node-library">
+          <button data-add="input">
+            <span class="node-symbol input-color">▷</span
+            ><span>Input / Start<small>Provide the workflow data</small></span
+            ><b>↗</b>
+          </button>
+          <button data-add="choice">
+            <span class="node-symbol choice-color">◇</span
+            ><span>Choice<small>Pick the next path</small></span
+            ><b>+</b></button
+          ><button data-add="noul">
+            <span class="node-symbol noul-color">◈</span
+            ><span>Yes / No<small>Judge a condition</small></span
+            ><b>+</b></button
+          ><button data-add="set-state">
+            <span class="node-symbol state-color">≔</span
+            ><span>Set state<small>Update the context</small></span
+            ><b>+</b></button
+          ><button data-add="end">
+            <span class="node-symbol end-color">□</span
+            ><span>Finish<small>Return an outcome</small></span
+            ><b>+</b>
+          </button>
+        </div>
+        <div class="library-bottom">
+          <span class="tiny-label">THE LOOP</span>
+          <p>Observe. Judge.<br />Choose. Repeat.</p>
+          <small>Code owns the flow.<br />Jev makes the judgment.</small
+          ><span class="orbit">✳</span>
+        </div>
+      </aside>
+      <section class="workbench">
+        <div class="graph-toolbar">
+          <div>
+            <div class="breadcrumb">WORKSPACE / GRAPHS</div>
+            <h1 id="graph-name">Loading graph…</h1>
+          </div>
+          <div class="graph-actions">
+            <span id="save-status">Saved locally</span
+            ><button id="settings" title="Edit workflow settings">⚙</button>
+          </div>
+        </div>
+        <div class="run-toolbar">
+          <span class="graph-chip"
+            ><span class="live-dot"></span>
+            <span id="graph-count">6 NODES</span></span
+          >
+          <div class="run-controls">
+            <label class="mode-label" for="mode">MODE</label
+            ><select id="mode">
+              <option value="demo">Simulation</option>
+              <option value="live">Live Jev</option></select
+            ><button id="stop" disabled>■ Stop</button
+            ><button id="run" class="primary-button">▶ Run graph</button>
+          </div>
+        </div>
+        <div id="notice" role="status" class="notice">
+          Simulation uses fixed sample probabilities. Live runs use your
+          server’s JEV_API_KEY.
+        </div>
+        <div id="canvas" class="canvas" aria-label="Workflow graph">
+          <div class="canvas-hint">
+            DECISION CANVAS <span>Drag nodes · drag background to pan</span>
+          </div>
+          <div id="stage" class="stage">
+            <svg
+              id="edges"
+              class="edges"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            ></svg>
+            <div id="nodes"></div>
+          </div>
+          <div class="canvas-bottom">
+            <span
+              ><i class="legend-dot"></i> SELECTED PATH
+              <i class="legend-dot muted"></i> ALTERNATIVE</span
+            >
+            <div class="zoom-controls">
+              <button id="zoom-out" aria-label="Zoom out">−</button
+              ><span id="zoom-value">100%</span
+              ><button id="zoom-in" aria-label="Zoom in">+</button
+              ><button id="arrange">Arrange flow</button
+              ><button id="fit">Fit</button>
+            </div>
+          </div>
+        </div>
+        <section class="monitor">
+          <header>
+            <div class="monitor-heading">
+              <span class="live-dot"></span> RUN MONITOR
+              <span id="run-status" class="badge">IDLE</span>
+            </div>
+            <button id="export-run" disabled>↧ Export trace</button>
+          </header>
+          <div class="metrics">
+            <div>
+              <span>JUDGMENTS</span><strong id="metric-calls">00</strong>
+            </div>
+            <div>
+              <span>LAST LATENCY</span><strong id="metric-latency">—</strong>
+            </div>
+            <div>
+              <span>ACTIVE NODE</span><strong id="metric-node">—</strong>
+            </div>
+            <div>
+              <span>EXECUTION</span><strong id="metric-mode">SIMULATION</strong>
+            </div>
+          </div>
+          <div
+            id="timeline"
+            class="timeline"
+            role="log"
+            aria-label="Run events"
+          >
+            <div class="empty-trace">
+              No decisions yet. Run the graph and follow the signal.
+            </div>
+          </div>
+        </section>
+      </section>
+      <aside class="inspector">
+        <div class="inspector-tabs">
+          <button id="tab-node" aria-pressed="true">Node</button
+          ><button id="tab-state" aria-pressed="false">Workflow</button
+          ><button id="tab-format" aria-pressed="false">Format</button>
+        </div>
+        <div id="inspector-content"></div>
+        <div class="inspector-footer">
+          <span class="live-dot"></span> LOCAL FIRST <span>v0.1</span>
+        </div>
+      </aside>
+    </main>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

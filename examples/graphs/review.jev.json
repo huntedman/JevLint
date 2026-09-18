@@ -1,0 +1,156 @@
+{
+  "format": "jev-workflow",
+  "version": 1,
+  "id": "code-review",
+  "name": "The little code inspector",
+  "model": "jev-latest",
+  "entry": "input",
+  "maxSteps": 21,
+  "timeoutMs": 30000,
+  "state": {},
+  "nodes": [
+    {
+      "id": "input",
+      "label": "Workflow input",
+      "type": "input",
+      "values": {
+        "file": "checkout.ts",
+        "source": "export function checkout(status) { if (status === 'ready') return 'ship'; return 'hold'; }",
+        "goal": "Find files that would benefit from a deeper code review."
+      }
+    },
+    {
+      "id": "classify",
+      "label": "Choose a review lens",
+      "type": "choice",
+      "instructions": "Look at `context.source`. Which concern is most worth inspecting? Choose clean if neither concern applies.",
+      "criteria": {
+        "magic_strings": "Unexplained string literals controlling behavior",
+        "unclear_names": "Names whose purpose is difficult to understand",
+        "clean": "Neither concern needs attention"
+      },
+      "minConfidence": 0
+    },
+    {
+      "id": "magic",
+      "label": "Are these magic strings?",
+      "type": "noul",
+      "instructions": "Does `context.source` contain string literals that encode domain rules and should be named constants? Ignore imports, display text, and obvious formatting strings.",
+      "threshold": 0.8
+    },
+    {
+      "id": "names",
+      "label": "Are the names unclear?",
+      "type": "noul",
+      "instructions": "Does `context.source` use names that obscure their purpose and would benefit from a deeper naming review?",
+      "threshold": 0.8
+    },
+    {
+      "id": "flag",
+      "label": "Prepare the handoff",
+      "type": "set-state",
+      "values": {
+        "needsReview": true,
+        "reviewer": "larger-llm"
+      }
+    },
+    {
+      "id": "review",
+      "label": "Ready for deeper review",
+      "type": "end",
+      "output": "Flagged for deeper review. Pass this run's state and judgments to your reviewer."
+    },
+    {
+      "id": "pass",
+      "label": "Nothing to flag",
+      "type": "end",
+      "output": "No selected concern crossed its threshold. This is a first pass, not a guarantee of correctness."
+    }
+  ],
+  "edges": [
+    {
+      "id": "input-next",
+      "source": "input",
+      "output": "next",
+      "target": "classify"
+    },
+    {
+      "id": "classify-magic",
+      "source": "classify",
+      "output": "magic_strings",
+      "target": "magic"
+    },
+    {
+      "id": "classify-names",
+      "source": "classify",
+      "output": "unclear_names",
+      "target": "names"
+    },
+    {
+      "id": "classify-pass",
+      "source": "classify",
+      "output": "clean",
+      "target": "pass"
+    },
+    {
+      "id": "magic-yes",
+      "source": "magic",
+      "output": "yes",
+      "target": "flag"
+    },
+    {
+      "id": "magic-no",
+      "source": "magic",
+      "output": "no",
+      "target": "pass"
+    },
+    {
+      "id": "names-yes",
+      "source": "names",
+      "output": "yes",
+      "target": "flag"
+    },
+    {
+      "id": "names-no",
+      "source": "names",
+      "output": "no",
+      "target": "pass"
+    },
+    {
+      "id": "flag-next",
+      "source": "flag",
+      "output": "next",
+      "target": "review"
+    }
+  ],
+  "layout": {
+    "input": {
+      "x": 50,
+      "y": 130
+    },
+    "classify": {
+      "x": 380,
+      "y": 130
+    },
+    "magic": {
+      "x": 710,
+      "y": 130
+    },
+    "names": {
+      "x": 710,
+      "y": 310
+    },
+    "flag": {
+      "x": 1040,
+      "y": 130
+    },
+    "review": {
+      "x": 1370,
+      "y": 130
+    },
+    "pass": {
+      "x": 1040,
+      "y": 310
+    }
+  }
+}

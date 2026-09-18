@@ -27,7 +27,9 @@
     "jevlint": "node src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "studio": "node --env-file-if-exists=.env src/studio.ts",
+    "graph": "node --env-file-if-exists=.env src/graph.ts"
   },
   "dependencies": {
     "zod": "^4.5.4"
@@ -41,7 +43,8 @@
   },
   "imports": {
     "#jevlint/*": "./src/*",
-    "#jevlint-plugins/*": "./plugins/*"
+    "#jevlint-plugins/*": "./plugins/*",
+    "#studio/*": "./studio/*"
   },
   "bin": {
     "jevlint": "dist/src/index.mjs"
