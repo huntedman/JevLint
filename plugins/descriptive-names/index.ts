@@ -13,12 +13,43 @@ export const plugin = {
       "Do not infer a domain concept that is absent from the file. Ignore identifier-like text inside strings or comments, including examples used as data. If the only concern is subjective preference, insufficient context, or a name outside this file's control, answer no.",
     ],
     examples: {
-      violation:
-        "function doStuff(data) { return data.filter(x => x.isOverdue).map(x => x.invoiceId); }",
-      compliant:
-        "function getOverdueInvoiceIds(invoices) { return invoices.filter(invoice => invoice.isOverdue).map(invoice => invoice.invoiceId); }",
-      conventional:
-        "function identity<T>(value: T): T { return value; } function compareNumbers(a: number, b: number) { return a - b; }",
+      compliant: [
+        {
+          code: `
+            function getOverdueInvoiceIds(invoices) {
+              return invoices
+                .filter(invoice => invoice.isOverdue)
+                .map(invoice => invoice.invoiceId);
+            }
+          `,
+          reason:
+            "The function and parameter names describe the visible invoice-selection responsibility.",
+        },
+        {
+          code: `
+            function identity<T>(value: T): T {
+              return value;
+            }
+
+            function compareNumbers(a: number, b: number) {
+              return a - b;
+            }
+          `,
+          reason:
+            "Generic values and short comparator parameters have clear conventional meanings.",
+        },
+      ],
+      violations: [
+        {
+          code: `
+            function doStuff(data) {
+              return data.filter(x => x.isOverdue).map(x => x.invoiceId);
+            }
+          `,
+          reason:
+            "The function and parameter names conceal the specific responsibility of selecting overdue invoice IDs.",
+        },
+      ],
     },
   },
   message:
