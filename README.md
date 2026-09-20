@@ -21,7 +21,7 @@ default finding threshold is `0.8` (80%).
 
 ## Get started
 
-Requires **Node.js 22.18 or newer**. From your project root:
+Requires **Node.js 24 or newer**. From your project root:
 
 ```sh
 npm install --save-dev @jevlint/cli
