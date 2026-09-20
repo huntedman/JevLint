@@ -57,6 +57,11 @@ Files named secrets or credentials with any scanned source extension are exclude
 Files outside the working directory, including external symlink targets, are excluded.
 Reads JEV_API_KEY by default and loads .env from the working directory.
 Existing environment variables take precedence over .env values.
+Successful judgments are cached in .jevlint/ in the working repository.
+Changes to source, file path, model, or plugin definitions trigger fresh analysis.
+Cache hits still report findings using the current threshold. No source or API keys
+are stored in cache entries. Dry runs bypass the cache. Delete .jevlint/ to clear it.
+Add .jevlint/ to your repository's ignore file.
 
   --config <path>    Read a specific configuration file
   --threshold <0..1>  Flag files at or above this probability (default: 0.8)
@@ -64,6 +69,7 @@ Existing environment variables take precedence over .env values.
   --format text|json Output format (default: text)
   --color auto|always|never  Terminal colours (default: auto; respects NO_COLOR)
   --ignore <glob>    Add exclusions relative to the config directory; repeatable
+  --no-cache        Analyze again without reading or writing .jevlint/ cache entries
   --dry-run         Print request JSON without calling Jev or requiring an API key
                     Still imports and executes configured JavaScript/TypeScript plugins.
                     Only run with plugins you trust; plugin code is not sandboxed.
@@ -104,6 +110,7 @@ function parseOptions({ args }: Pick<CliInput, "args">) {
       color: { type: "string" },
       ignore: { type: "string", multiple: true },
       "dry-run": { type: "boolean" },
+      "no-cache": { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -202,6 +209,7 @@ async function execute(
     apiKey,
     model: configuration.model,
     dryRun,
+    cache: values["no-cache"] !== true,
     plugins,
     directory,
     timeoutMs: configuration.timeoutMs,

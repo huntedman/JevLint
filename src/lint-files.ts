@@ -1,3 +1,8 @@
+import {
+  createCacheKey,
+  readCachedJudgments,
+  writeCachedJudgments,
+} from "#jevlint/judgment-cache.ts";
 import { relative } from "node:path";
 import { createRequest, evaluateFile } from "#jevlint/jev-client.ts";
 import { readSource } from "#jevlint/source-files.ts";
@@ -10,6 +15,7 @@ export type FileResult =
       filePath: string;
       status: typeof fileStatus.analyzed;
       judgments: Judgment[];
+      cached?: true;
     }
   | { filePath: string; status: typeof fileStatus.failed; error: string }
   | { filePath: string; status: typeof fileStatus.skipped };
@@ -35,6 +41,7 @@ interface LintFilesInput {
   apiKey: string;
   model: string;
   dryRun: boolean;
+  cache?: boolean;
   directory: string;
   plugins: readonly ScopedPlugin[];
   timeoutMs: number;
@@ -74,10 +81,6 @@ async function lintFile(input: LintFileInput): Promise<FileOutcome> {
 
   if (plugins.length === 0) return { filePath, status: fileStatus.skipped };
 
-  input.writeProgress?.({
-    text: `Jevlint: ${input.dryRun ? "preparing" : "analyzing"} ${filePath}\n`,
-  });
-
   try {
     const source = await readSource({
       filePath: input.absolutePath,
@@ -86,14 +89,44 @@ async function lintFile(input: LintFileInput): Promise<FileOutcome> {
 
     const request = { filePath, source, model: input.model, plugins };
 
-    if (input.dryRun)
+    if (input.dryRun) {
+      input.writeProgress?.({ text: `Jevlint: preparing ${filePath}\n` });
       return { status: fileStatus.prepared, request: createRequest(request) };
+    }
+
+    const key = createCacheKey({
+      request: createRequest(request),
+      messages: plugins.map((plugin) => plugin.message),
+    });
+    const cached =
+      input.cache === false
+        ? undefined
+        : await readCachedJudgments({
+            cwd: input.cwd,
+            key,
+            pluginIds: plugins.map((plugin) => plugin.id),
+          });
+
+    input.writeProgress?.({
+      text: `Jevlint: ${cached ? "cached" : "analyzing"} ${filePath}\n`,
+    });
+
+    if (cached)
+      return {
+        filePath,
+        status: fileStatus.analyzed,
+        judgments: cached,
+        cached: true,
+      };
 
     const judgments = await evaluateFile({
       ...request,
       apiKey: input.apiKey,
       timeoutMs: input.timeoutMs,
     });
+
+    if (input.cache !== false)
+      await writeCachedJudgments({ cwd: input.cwd, key, judgments });
 
     return { filePath, status: fileStatus.analyzed, judgments };
   } catch (error) {
