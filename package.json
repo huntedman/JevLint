@@ -48,7 +48,6 @@
   },
   "files": [
     "dist",
-    "custom-plugins",
     "jevlint.config.example.json"
   ]
 }

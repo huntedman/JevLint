@@ -1,5 +1,5 @@
 import { glob, lstat, open, realpath } from "node:fs/promises";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { matchesFilePattern } from "#jevlint/file-pattern.ts";
 
 interface DiscoverFilesInput {
@@ -52,11 +52,13 @@ const ignoredDirectories = [
   "credentials",
 ];
 
-const sourcePattern = "**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}";
+const sourceExtensions = ["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
+const extensionPattern = `{${sourceExtensions.join(",")}}`;
+const sourcePattern = `**/*.${extensionPattern}`;
 
 const defaultExclusions = [
   ...ignoredDirectories.map((directory) => `**/${directory}/**`),
-  "**/{secrets,credentials}.{js,mjs,cjs,ts}",
+  `**/{secrets,credentials}.${extensionPattern}`,
 ];
 
 export async function discoverFiles({
@@ -146,7 +148,7 @@ async function* discoverPattern({
 
 function isIncludedSource({ cwd, filePath, exclude }: SourceSelectionInput) {
   return (
-    /\.[cm]?[jt]sx?$/.test(filePath) &&
+    sourceExtensions.includes(extname(filePath).slice(1)) &&
     !exclude.some((pattern) =>
       matchesFilePattern({ directory: cwd, filePath, pattern }),
     )

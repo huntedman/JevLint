@@ -55,7 +55,17 @@ npx jevlint src --threshold 0.9 --format json
 ```
 
 Quote globs so JevLint expands them. Repeat `--ignore` for additional exclusions.
-`--dry-run` prints request JSON without calling the API or requiring a key.
+`--dry-run` prints request JSON without calling the Jev API or requiring a key.
+It still imports and executes configured JavaScript and TypeScript plugins with
+normal Node.js permissions. Plugin code can read files, modify files, or make its
+own network requests, including during a dry run. Only run configurations and
+plugins you trust; this flag is not a sandbox for unfamiliar repositories.
+
+Source scanning excludes `secrets/` and `credentials/` directories and files named
+`secrets` or `credentials` with any supported extension: `.js`, `.jsx`, `.mjs`,
+`.cjs`, `.ts`, `.tsx`, `.mts`, and `.cts`. These filename exclusions are not secret
+detection: sensitive values in other source files can still be included. Use
+`--ignore` or configuration exclusions for additional sensitive files.
 
 ## Your rules, your files
 

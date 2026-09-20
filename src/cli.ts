@@ -52,7 +52,8 @@ Recursively judge JavaScript/TypeScript files using Jev and configured plugins.
 Loads jevlint.config.json from the current directory when present.
 Configured paths and plugin scopes are relative to the config file's directory.
 CLI targets are relative to the working directory and replace configured files.
-Generated/dependency folders and credentials are excluded.
+Generated/dependency folders and secrets/credentials directories are excluded.
+Files named secrets or credentials with any scanned source extension are excluded.
 Files outside the working directory, including external symlink targets, are excluded.
 Reads JEV_API_KEY by default and loads .env from the working directory.
 Existing environment variables take precedence over .env values.
@@ -64,6 +65,8 @@ Existing environment variables take precedence over .env values.
   --color auto|always|never  Terminal colours (default: auto; respects NO_COLOR)
   --ignore <glob>    Add exclusions relative to the config directory; repeatable
   --dry-run         Print request JSON without calling Jev or requiring an API key
+                    Still imports and executes configured JavaScript/TypeScript plugins.
+                    Only run with plugins you trust; plugin code is not sandboxed.
   -h, --help        Show help
 
 Example: jevlint apps/backend/src --ignore '**/*.test.ts'
